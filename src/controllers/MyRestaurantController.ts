@@ -3,10 +3,12 @@ import Restaurant from "../models/restaurant";
 import cloudinary from "cloudinary";
 import mongoose from "mongoose";
 import Order from "../models/order";
+import Category from "../models/category";
 
 const getMyRestaurant = async (req: Request, res: Response) => {
   try {
-    const restaurant = await Restaurant.findOne({ user: req.userId });
+    const restaurant = await Restaurant.findOne({ user: req.userId })
+    .populate("category");
     if (!restaurant) {
       return res.status(404).json({ message: "restaurant not found" });
     }
@@ -19,6 +21,10 @@ const getMyRestaurant = async (req: Request, res: Response) => {
 
 const createMyRestaurant = async (req: Request, res: Response) => {
   try {
+    console.log("we are here");
+    console.log(req.body);
+    
+    
     const existingRestaurant = await Restaurant.findOne({ user: req.userId });
 
     if (existingRestaurant) {
@@ -27,12 +33,23 @@ const createMyRestaurant = async (req: Request, res: Response) => {
         .json({ message: "User restaurant already exists" });
     }
 
-    const imageUrl = await uploadImage(req.file as Express.Multer.File);
 
+    
+    const imageUrl = await uploadImage(req.file as Express.Multer.File);
+    console.log('till here');
     const restaurant = new Restaurant(req.body);
     restaurant.imageUrl = imageUrl;
     restaurant.user = new mongoose.Types.ObjectId(req.userId);
+    const category = await Category.findOne({ name: req.body.category });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    
+    restaurant.category = new mongoose.Types.ObjectId(category._id as string);
+    // restaurant.category = new mongoose.Types.ObjectId(req.body.category);
     restaurant.lastUpdated = new Date();
+    console.log("restraunt os ",restaurant);
     await restaurant.save();
 
     res.status(201).send(restaurant);
@@ -60,6 +77,13 @@ const updateMyRestaurant = async (req: Request, res: Response) => {
     restaurant.cuisines = req.body.cuisines;
     restaurant.menuItems = req.body.menuItems;
     restaurant.lastUpdated = new Date();
+    const category = await Category.findOne({ name: req.body.category });
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+
+    restaurant.category = new mongoose.Types.ObjectId(category._id as string);
 
     if (req.file) {
       const imageUrl = await uploadImage(req.file as Express.Multer.File);

@@ -45,5 +45,19 @@ export const validateMyRestaurantRequest = [
   body("menuItems.*.price")
     .isFloat({ min: 0 })
     .withMessage("Menu item price is required and must be a postive number"),
+  body("category")
+    .isString()
+    .notEmpty()
+    .withMessage("Category must be a string")
+    .isIn(["American",
+      "Japanese",
+      "Chinese",
+      "Italian",
+      "Mexican",
+      "Indian",
+      "Greek",
+      "French",
+      "Spanish",])
+    .withMessage("Invalid category"),
   handleValidationErrors,
 ];
